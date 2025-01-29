@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+... [<!DOCTYPE html>
+<html>
+<head>
+    <title>Pixel Dino Runner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        * { margin: 0; padding: 0; touch-action: manipulation; }
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background: #f7f7f7; 
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            touch-action: none;
+        }
+        #gameCanvas {
+            image-rendering: pixelated;
+            touch-action: none;
+            border: 2px solid #666;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font: 16px 'Arial';
+            color: #666;
+            z-index: 2;
+        }
+        #jumpButton {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.2);
+            border: none;
+            display: none;
+            z-index: 3;
+        }
+        @media (hover: none) and (pointer: coarse) {
+            #jumpButton { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" tabindex="0"></canvas>
+        <div id="score">SCORE: 0</div>
+        <button id="jumpButton">JUMP</button>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreElement = document.getElementById('score');
+const jumpButton = document.getElementById('jumpButton');
+
+const scale = window.devicePixelRatio || 1;
+canvas.width = 400 * scale;
+canvas.height = 150 * scale;
+canvas.style.width = '400px';
+canvas.style.height = '150px';
+ctx.scale(scale, scale);
+
+let isJumping = false;
+let score = 0;
+let gameSpeed = 3;
+let finishLineAdded = false;
+
+const dino = {
+    x: 50,
+    y: 106,
+    width: 24,
+    height: 24,
+    velocity: 0,
+    gravity: 0.5,
+    jumpForce: -10
+};
+
+let obstacles = [];
+const obstacleTypes = [{ width: 24, height: 14 }];
+
+function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#666';
+    ctx.fillRect(0, 130, canvas.width, 4);
+
+    dino.y += dino.velocity;
+    dino.velocity += dino.gravity;
+
+    if (dino.y >= 106) {
+        dino.y = 106;
+        dino.velocity = 0;
+        isJumping = false;
+    }
+
+    ctx.textBaseline = 'bottom';
+    ctx.font = '24px Arial';
+    ctx.fillText('🦖', dino.x, dino.y + 24);
+
+    if (Math.floor(score/10) < 1000) {
+        if (Math.random() < 0.015) {
+            const type = obstacleTypes[0];
+            obstacles.push({
+                x: canvas.width,
+                y: 130 - type.height,
+                ...type
+            });
+        }
+    } else if (!finishLineAdded) {
+        obstacles.push({
+            x: canvas.width,
+            y: 100,
+            width: 30,
+            height: 30,
+            type: 'finish'
+        });
+        finishLineAdded = true;
+    }
+
+    obstacles.forEach((obstacle, index) => {
+        obstacle.x -= gameSpeed;
+
+        ctx.textBaseline = 'top';
+        if (obstacle.type === 'finish') {
+            ctx.font = '30px Arial';
+            ctx.fillText('⛳️', obstacle.x, obstacle.y);
+        } else {
+            ctx.font = '14px Arial';
+            ctx.fillText('🛷', obstacle.x, obstacle.y + 4);
+        }
+
+        if (dino.x < obstacle.x + obstacle.width &&
+            dino.x + dino.width > obstacle.x &&
+            dino.y < obstacle.y + obstacle.height &&
+            dino.y + dino.height > obstacle.y) {
+            if (obstacle.type === 'finish') {
+                alert(`YOU WIN! Score: ${Math.floor(score/10)}`);
+                resetGame();
+            } else {
+                gameOver();
+            }
+        }
+
+        if (obstacle.x < -obstacle.width) {
+            obstacles.splice(index, 1);
+        }
+    });
+
+    score++;
+    scoreElement.textContent = `SCORE: ${Math.floor(score/10)}`;
+    gameSpeed = Math.min(gameSpeed + 0.0005, 8);
+}
+
+function jump() {
+    if (!isJumping) {
+        dino.velocity = dino.jumpForce;
+        isJumping = true;
+    }
+}
+
+function gameOver() {
+    alert(`GAME OVER! Score: ${Math.floor(score/10)}`);
+    resetGame();
+}
+
+function resetGame() {
+    score = 0;
+    gameSpeed = 3;
+    obstacles = [];
+    finishLineAdded = false;
+    dino.y = 106;
+    dino.velocity = 0;
+    isJumping = false;
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
+    }
+});
+canvas.addEventListener('click', jump);
+jumpButton.addEventListener('click', jump);
+
+document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+canvas.focus();
+
+function gameLoop() {
+    update();
+    requestAnimationFrame(gameLoop);
+}
+gameLoop();
+</script>
+</body>
+</html>] ...
+</html>
